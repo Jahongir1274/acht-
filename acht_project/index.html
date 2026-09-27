@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Acht — Kirish</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body{
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px;
+    background:#000;
+  }
+  .login-card{
+    width:100%; max-width:380px; padding:36px 32px;
+    position:relative; z-index:2;
+  }
+  .login-card .brand{margin-bottom:28px; justify-content:center;}
+  form{display:flex; flex-direction:column; gap:16px;}
+  .foot-note{margin-top:20px; text-align:center; font-size:12.5px; color:var(--muted);}
+
+  .lock-wrap{ display:flex; justify-content:center; margin-bottom:14px; }
+  .lock-icon{
+    width:46px; height:46px; color:var(--accent);
+    filter:drop-shadow(0 0 10px var(--glow));
+    transition:transform .45s cubic-bezier(.34,1.56,.64,1), color .4s ease, filter .4s ease;
+  }
+  .lock-icon.unlocking{
+    transform:rotate(-10deg) scale(1.18);
+    color:#34d399;
+    filter:drop-shadow(0 0 20px rgba(52,211,153,.65));
+  }
+</style>
+</head>
+<body>
+
+  <div class="card login-card">
+    <div class="lock-wrap"><img id="lockIcon" src="assets/lock-locked.svg" class="lock-icon" alt="qulf"></div>
+    <div class="brand">
+      <div class="mark">A</div>
+      <span>Acht</span>
+    </div>
+    <p style="margin-top:-14px; margin-bottom:22px; font-size:13.5px; text-align:center;">Faqat ro'yxatdagi hisob bilan kiriladi.</p>
+
+    <form id="loginForm">
+      <div>
+        <label for="email">Login (email)</label>
+        <input type="email" id="email" placeholder="masalan: talaba1@acht.uz" required>
+      </div>
+      <div>
+        <label for="password">Parol</label>
+        <input type="password" id="password" required>
+      </div>
+      <button type="submit" class="btn gold" id="loginBtn">Kirish</button>
+      <div class="status-msg" id="status"></div>
+    </form>
+
+    <div class="foot-note">Hisobingiz yo'qmi? Owner (administrator) sizga login va parol berishi kerak.</div>
+  </div>
+
+<script src="js/matrix-rain.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // Agar allaqachon kirgan bo'lsa, to'g'ridan-to'g'ri ilovaga yuboriladi.
+  if(achtCurrentUser()) window.location.href = "app.html";
+
+  const form = document.getElementById('loginForm');
+  const status = document.getElementById('status');
+  const btn = document.getElementById('loginBtn');
+  const lockIcon = document.getElementById('lockIcon');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status.textContent = "";
+    status.className = "status-msg";
+    btn.disabled = true;
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    let ok = false;
+    try{ ok = await achtLogin(email, password); }
+    catch(err){ status.textContent = "Tarmoq xatosi. Qayta urinib ko'ring."; status.className = "status-msg error"; btn.disabled = false; return; }
+
+    if(ok){
+      // Qulf ochilish animatsiyasi, so'ng ilovaga o'tish
+      lockIcon.src = "assets/lock-unlocked.svg";
+      lockIcon.classList.add('unlocking');
+      status.textContent = "Kirish muvaffaqiyatli...";
+      status.className = "status-msg ok";
+      setTimeout(() => { window.location.href = "app.html"; }, 650);
+    }else{
+      status.textContent = "Login yoki parol xato. Qayta urinib ko'ring.";
+      status.className = "status-msg error";
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

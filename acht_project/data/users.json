@@ -1,0 +1,6 @@
+{
+  "users": [
+    { "email": "jahongirmirzayev1274@gmail.com", "password": "birds818", "name": "Owner", "role": "owner" },
+    { "email": "talaba1@acht.uz", "password": "parol123", "name": "Talaba 1", "role": "student" }
+  ]
+}
