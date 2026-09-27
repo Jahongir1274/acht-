@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Acht — Owner paneli</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body{padding:24px; position:relative;}
+  .wrap{max-width:700px; margin:0 auto; position:relative; z-index:1;}
+  header{display:flex; align-items:center; justify-content:space-between; margin-bottom:26px;}
+  .panel{padding:28px; margin-bottom:20px;}
+  table{width:100%; border-collapse:collapse; font-size:14px;}
+  th,td{text-align:left; padding:9px 6px; border-bottom:1px solid var(--border); color:var(--text);}
+  th{color:var(--muted); font-weight:600; font-size:12.5px;}
+  code{background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; font-size:13px; color:#d68bff;}
+  pre{background:rgba(0,0,0,0.4); border:1px solid var(--border); padding:14px; border-radius:8px; font-size:12.5px; overflow-x:auto; color:#e2e8f0;}
+
+  .method-tabs{display:flex; gap:8px; margin-bottom:18px;}
+  .method-tab{
+    flex:1; padding:10px 14px; border-radius:10px; border:1px solid var(--border);
+    background:rgba(255,255,255,0.03); color:var(--muted); font-size:13.5px; font-weight:600;
+    cursor:pointer; text-align:center; transition:.15s;
+  }
+  .method-tab.active{ background:rgba(175,2,232,0.12); border-color:var(--border-accent); color:#fff; box-shadow:0 0 16px -4px var(--glow); }
+  .method-body{display:none;}
+  .method-body.active{display:block;}
+  form.upload-form{display:flex; flex-direction:column; gap:14px;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .token-note{font-size:12px; color:var(--muted); line-height:1.6;}
+  #limitBadge{font-size:12.5px; color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="glow-sphere-1"></div>
+<div class="glow-sphere-2"></div>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><div class="mark">A</div><span>Acht · Owner</span></div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span id="limitBadge"></span>
+      <button class="btn secondary" onclick="logout()">Chiqish</button>
+    </div>
+  </header>
+
+  <!-- GitHub token (ikkala funksiya uchun ham umumiy) -->
+  <div class="card panel">
+    <h2 style="font-size:18px;">GitHub token</h2>
+    <p style="margin-top:-6px;">Quyidagi ikkala funksiya (foydalanuvchi qo'shish va PDF yuklash — 2-usul) shu token orqali ishlaydi.</p>
+    <div style="display:flex; gap:10px; align-items:flex-end;">
+      <div style="flex:1;">
+        <label for="ghToken">GitHub token</label>
+        <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxx">
+      </div>
+      <button class="btn secondary" id="ghSaveBtn" style="height:41px;">Saqlash</button>
+    </div>
+    <p class="token-note" style="margin-top:10px;">
+      Token faqat shu brauzerda (localStorage) saqlanadi. Fine-grained token yarating, faqat shu repo uchun
+      <b>Contents: Read and write</b> huquqini bering. <a href="#" id="ghClearTokenLink">Tokenni tozalash</a>.
+    </p>
+  </div>
+
+  <!-- Yangi foydalanuvchi qo'shish — endi to'g'ridan-to'g'ri saytdan -->
+  <div class="card panel">
+    <h2 style="font-size:18px;">Yangi foydalanuvchi qo'shish</h2>
+    <form class="upload-form" id="userForm">
+      <div class="row2">
+        <div>
+          <label for="newEmail">Login (email)</label>
+          <input type="email" id="newEmail" placeholder="talaba2@acht.uz" required>
+        </div>
+        <div>
+          <label for="newPassword">Parol</label>
+          <input type="text" id="newPassword" placeholder="kamida 6 belgi" required minlength="6">
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label for="newName">Ism</label>
+          <input type="text" id="newName" placeholder="Talaba 2">
+        </div>
+        <div>
+          <label for="newRole">Rol</label>
+          <select id="newRole">
+            <option value="student">student</option>
+            <option value="owner">owner</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn gold" id="userBtn">Hisob yaratish</button>
+      <div class="status-msg" id="userStatus"></div>
+    </form>
+  </div>
+
+  <!-- PDF qo'shish — 2 usul -->
+  <div class="card panel">
+    <h2 style="font-size:18px;">PDF kitob qo'shish</h2>
+    <p style="margin-top:-6px;">
+      Papkalar va fayllar endi avtomatik — <code>pdf/</code> papkasidagi haqiqiy tuzilishdan o'qiladi,
+      hech qanday JSON tahrirlash shart emas.
+    </p>
+
+    <div class="method-tabs">
+      <div class="method-tab active" data-m="manual">1-usul · Qo'lda (offline)</div>
+      <div class="method-tab" data-m="auto">2-usul · Sayt orqali (GitHub)</div>
+    </div>
+
+    <div class="method-body active" id="m-manual">
+      <p>
+        <code>pdf/</code> papkasi ichida kerakli (yoki yangi) papkaga kirib, PDF faylni shu yerga tashlang
+        (drag-and-drop) va GitHub'ga push qiling. Boshqa hech narsa tahrirlash shart emas — sayt papkani
+        avtomatik ko'radi.
+      </p>
+    </div>
+
+    <div class="method-body" id="m-auto">
+      <p>Yuqoridagi GitHub token saqlangan bo'lishi kerak.</p>
+      <form class="upload-form" id="ghForm">
+        <div class="row2">
+          <div>
+            <label for="folderSelect">Mavjud papka</label>
+            <select id="folderSelect"></select>
+          </div>
+          <div>
+            <label for="newFolderId">Yangi papka ID (ixtiyoriy)</label>
+            <input type="text" id="newFolderId" placeholder="masalan: fizika">
+          </div>
+        </div>
+        <div>
+          <label for="pdfFile">PDF fayl</label>
+          <input type="file" id="pdfFile" accept="application/pdf" required>
+        </div>
+        <button type="submit" class="btn gold" id="ghUploadBtn">Yuklash</button>
+        <div class="status-msg" id="ghStatus"></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card panel">
+    <h2 style="font-size:18px;">Hozirgi foydalanuvchilar</h2>
+    <table>
+      <thead><tr><th>Ism</th><th>Login</th><th>Rol</th></tr></thead>
+      <tbody id="userRows"><tr><td colspan="3" style="color:var(--muted);">Yuklanmoqda...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script src="js/github-config.js"></script>
+<script src="js/github-upload.js"></script>
+<script>
+requireOwner(() => {
+  loadUserRows();
+  loadFolderOptions();
+  loadLimitBadge();
+});
+
+async function loadUserRows(){
+  const rows = document.getElementById('userRows');
+  try{
+    const users = await achtLoadUsers();
+    rows.innerHTML = users.map(u =>
+      `<tr><td>${u.name||''}</td><td>${u.email}</td><td>${u.role}</td></tr>`
+    ).join('');
+  }catch(e){
+    rows.innerHTML = '<tr><td colspan="3" style="color:var(--red);">Yuklab bo\'lmadi.</td></tr>';
+  }
+}
+
+async function loadLimitBadge(){
+  try{
+    const rate = await fetchGithubRateLimit();
+    document.getElementById('limitBadge').textContent = `GitHub limiti: ${rate.remaining}/${rate.limit}`;
+  }catch(e){}
+}
+
+// --- Token saqlash ---
+document.getElementById('ghToken').value = ghToken();
+document.getElementById('ghSaveBtn').addEventListener('click', () => {
+  ghSaveToken(document.getElementById('ghToken').value.trim());
+  alert('Token saqlandi.');
+});
+document.getElementById('ghClearTokenLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  ghClearToken();
+  document.getElementById('ghToken').value = '';
+  alert('Token tozalandi.');
+});
+
+// --- Usul tanlash tablari ---
+document.querySelectorAll('.method-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.method-body').forEach(b => b.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('m-' + tab.dataset.m).classList.add('active');
+  });
+});
+
+// --- Mavjud papkalarni select'ga yuklash (GitHub'dan jonli) ---
+async function loadFolderOptions(){
+  const select = document.getElementById('folderSelect');
+  try{
+    const folders = await fetchPdfFolders();
+    select.innerHTML = folders.map(f => `<option value="${f.id}">${f.icon} ${f.name}</option>`).join('')
+      + `<option value="">— yangi papka —</option>`;
+  }catch(e){
+    select.innerHTML = `<option value="">— yangi papka —</option>`;
+  }
+}
+
+// --- Yangi foydalanuvchi qo'shish formasi ---
+document.getElementById('userForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const status = document.getElementById('userStatus');
+  const btn = document.getElementById('userBtn');
+  status.className = 'status-msg'; status.textContent = '';
+
+  const email = document.getElementById('newEmail').value.trim();
+  const password = document.getElementById('newPassword').value;
+  const name = document.getElementById('newName').value.trim();
+  const role = document.getElementById('newRole').value;
+
+  btn.disabled = true; status.textContent = 'Yaratilmoqda...';
+  try{
+    await addUserViaGitHub({ email, password, name, role });
+    status.textContent = `Hisob yaratildi: ${email}. Sayt bir necha daqiqada yangilanadi.`;
+    status.className = 'status-msg ok';
+    e.target.reset();
+  }catch(err){
+    status.textContent = err.message || 'Xatolik yuz berdi.';
+    status.className = 'status-msg error';
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+// --- PDF yuklash formasi (2-usul) ---
+document.getElementById('ghForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const status = document.getElementById('ghStatus');
+  const btn = document.getElementById('ghUploadBtn');
+  status.className = 'status-msg'; status.textContent = '';
+
+  const selectedFolder = document.getElementById('folderSelect').value;
+  const newFolderId = document.getElementById('newFolderId').value.trim();
+  const folderId = newFolderId || selectedFolder;
+  if(!folderId){ status.textContent = 'Papka tanlang yoki yangi papka ID kiriting.'; status.className = 'status-msg error'; return; }
+
+  const fileInput = document.getElementById('pdfFile');
+  const file = fileInput.files[0];
+  if(!file){ status.textContent = 'PDF fayl tanlang.'; status.className = 'status-msg error'; return; }
+
+  btn.disabled = true;
+  status.textContent = 'Yuklanmoqda...';
+
+  try{
+    const base64Content = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    await uploadPdfViaGitHub({ folderId, fileName: file.name, base64Content });
+
+    status.textContent = 'PDF muvaffaqiyatli qo\'shildi! Sayt bir necha daqiqada yangilanadi.';
+    status.className = 'status-msg ok';
+    e.target.reset();
+    loadFolderOptions();
+  }catch(err){
+    status.textContent = err.message || 'Xatolik yuz berdi.';
+    status.className = 'status-msg error';
+  }finally{
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
